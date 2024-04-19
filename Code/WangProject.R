@@ -46,6 +46,7 @@ seuObj_Wang <- lapply(X = seuObj_Wang, FUN = function(x) {
   x <- RunPCA(x, features = features, verbose = FALSE)
 })
 
+
 #Assign each sample the correct day of collection (0 for uninjured mice)
 seuObj_Wang[[1]]@meta.data$time = rep(14, 10015)
 seuObj_Wang[[2]]@meta.data$time = rep(14, 10029)
@@ -60,6 +61,7 @@ seuObj_Wang[[10]]@meta.data$time = rep(3, 9278)
 seuObj_Wang[[11]]@meta.data$time = rep(3, 9252)
 seuObj_Wang[[12]]@meta.data$time = rep(3, 9296)
 seuObj_Wang[[13]]@meta.data$time = rep(3, 9294)
+
 
 #Using one uninjured mouse, one 3dpi, and one 14 dpi mouse for references for integration
 anchors <- FindIntegrationAnchors(object.list = seuObj_Wang, reference = c(1,5,10), 
@@ -85,7 +87,7 @@ DimPlot(seuObj.integrated, group.by = "time")
 
 DimPlot(seuObj.integrated, reduction = "umap", label = T)+ NoLegend()
 
-
+#Identifying Neutrophil cluster
 VlnPlot(seuObj.integrated, features = c("S100a9"))
 FeaturePlot(seuObj.integrated, features = c("Ly6g"))
 FeaturePlot(seuObj.integrated, features = c("S100a9"))
@@ -94,16 +96,18 @@ FeaturePlot(seuObj.integrated, features = c("Mmp9"))
 FeaturePlot(seuObj.integrated, features = c("Il1r2"))
 
 
-
+# Generate cell type predictions from database
 ref.se <- ImmGenData()
 sce <- as.SingleCellExperiment(seuObj.integrated)
 pred <- SingleR(test = sce, ref = ref.se, labels = ref.se$label.main)
 
+# Label clusters with the predicted cell types
 seuObj.integrated$pruned_labels = pred$pruned.labels
 
 DimPlot(seuObj.integrated, group.by = "pruned_labels", label = T, 
         label.size = 3) + NoLegend() 
 
+setwd("~/Desktop/GitHub/Neutrophils/Data")
 tiff("WangUMAP.tiff", units = "in", width = 6, height = 6, res = 300)
 DimPlot(seuObj.integrated, group.by = "pruned_labels", label = F) +
   guides(color=guide_legend(ncol =1, override.aes = list(size=5))) +
@@ -111,6 +115,8 @@ DimPlot(seuObj.integrated, group.by = "pruned_labels", label = F) +
   theme(axis.text.x = element_text(size=20),
         axis.text.y = element_text(size=20))
 dev.off()
+
+saveRDS(seuObj.integrated, file = "~/Desktop/Thesis/SingleCell/WangPaper/WangDat.rds")
 
 #Subset neutrophils
 Neutrophils_Wang <- subset(seuObj.integrated, pruned_labels == "Neutrophils")
@@ -128,13 +134,15 @@ DimPlot(Neutrophils_Wang, group.by = "time")+
   theme(axis.text.x = element_text(size=20),
         axis.text.y = element_text(size=20))
 
-
+set.seed(42)
 Neutrophils_Wang <- FindVariableFeatures(Neutrophils_Wang, selection.method = "vst", assay = "RNA")
 all.genes <- rownames(Neutrophils_Wang)
 Neutrophils_Wang <- ScaleData(Neutrophils_Wang, features = all.genes)
 Neutrophils_Wang <- RunPCA(Neutrophils_Wang, features = VariableFeatures(object = Neutrophils_Wang))
 
 ElbowPlot(Neutrophils_Wang)
+
+
 Neutrophils_Wang <- FindNeighbors(Neutrophils_Wang, dims = 1:20)
 Neutrophils_Wang <- FindClusters(Neutrophils_Wang)
 
