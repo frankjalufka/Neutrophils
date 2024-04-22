@@ -135,6 +135,16 @@ ElbowPlot(Neutrophils_Bren, ndims = 30)
 Neutrophils_Bren <- FindNeighbors(Neutrophils_Bren, dims = 1:30)
 Neutrophils_Bren <- FindClusters(Neutrophils_Bren)
 
+setwd("~/Desktop/GitHub/Neutrophils/Data")
+tiff("BrenNeutrophils.tif", units = "in", width = 6, height = 6, res = 300)
+DimPlot(Neutrophils_Bren, group.by = "time", label = F, cols = c("red", "gold", "aquamarine4")) +
+  guides(color=guide_legend(ncol =1, override.aes = list(size=5))) +
+  ggtitle("Brennan: Neutrophils UMAP")+
+  theme(axis.text.x = element_text(size=20),
+        axis.text.y = element_text(size=20))
+dev.off()
+
+saveRDS(Neutrophils_Bren, file = "~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Neutrophils_Bren.rds")
 
 FeaturePlot(Neutrophils_Bren, features = c("Ly6g"))
 FeaturePlot(Neutrophils_Bren, features = c("S100a9"))

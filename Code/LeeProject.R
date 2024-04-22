@@ -118,6 +118,18 @@ umap_time <- FetchData(object = Neutrophils_Lee, vars = c('UMAP_1','UMAP_2','tim
 DimPlot(Neutrophils_Lee, split.by = "time", group.by = "time")
 DimPlot(Neutrophils_Lee, group.by = "time")
 
+setwd("~/Desktop/GitHub/Neutrophils/Data")
+tiff("LeeNeutrophils.tif", units = "in", width = 6, height = 6, res = 300)
+DimPlot(Neutrophils_Lee, group.by = "time", label = F, cols = c("red", "green", "blue", "gold")) +
+  guides(color=guide_legend(ncol =1, override.aes = list(size=5))) +
+  ggtitle("Milich: Neutrophils UMAP")+
+  theme(axis.text.x = element_text(size=20),
+        axis.text.y = element_text(size=20))
+dev.off()
+
+saveRDS(Neutrophils_Lee, file = "~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Neutrophils_Lee.rds")
+
+
 #Values for original sample UMAP
 sample_cols <- RColorBrewer::brewer.pal(n = 10, name = 'Spectral')
 sample_cols <- c('firebrick','dodgerblue','goldenrod','firebrick','dodgerblue','goldenrod','firebrick','dodgerblue','firebrick','dodgerblue')

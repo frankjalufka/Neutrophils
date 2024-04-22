@@ -8,7 +8,7 @@ library(dplyr)
 library(EnhancedVolcano)
 
 #Skip the steps ahead of loading data by just loading saved rds object
-seuObj_Wang <- readRDS("~/Documents/SingleCell/WangPaper/wangSeuObj.rds")
+seuObj_Wang <- readRDS("~/Desktop/Thesis/SingleCell/WangPaper/WangDat.rds")
 #Best place to start to skip prep steps
 seuObj.integrated <- readRDS("~/Documents/SingleCell/WangPaper/seuObj.integratedWang.rds")
 #Load in single cell data
@@ -19,14 +19,11 @@ matricies_W <- sapply(tenXDat, FUN = Read10X)
 #options(Seurat.object.assay.version = "v3")
 seuObj_W <- lapply(matricies_W, CreateSeuratObject)
 
-
-
 #Assign mitochondrial gene percentages to cells
 seuObj_Wang <- lapply(X = seuObj_W, FUN = function(x) {
   x[["percent_mt"]] <- PercentageFeatureSet(x, pattern = "^mt-")
   x
 })
-
 
 #Subset objects to expected expression levels
 seuObj_Wang <- lapply(X = seuObj_Wang, FUN = function(x) {
@@ -45,7 +42,6 @@ seuObj_Wang <- lapply(X = seuObj_Wang, FUN = function(x) {
   x <- ScaleData(x, features = features, verbose = FALSE)
   x <- RunPCA(x, features = features, verbose = FALSE)
 })
-
 
 #Assign each sample the correct day of collection (0 for uninjured mice)
 seuObj_Wang[[1]]@meta.data$time = rep(14, 10015)
@@ -67,11 +63,9 @@ seuObj_Wang[[13]]@meta.data$time = rep(3, 9294)
 anchors <- FindIntegrationAnchors(object.list = seuObj_Wang, reference = c(1,5,10), 
                                   reduction = "rpca")
 
-
 seuObj.integrated <- IntegrateData(anchorset = anchors)
 
 DefaultAssay(seuObj.integrated) <- "integrated"
-
 
 seuObj.integrated <- ScaleData(seuObj.integrated, verbose = FALSE)
 seuObj.integrated <- RunPCA(seuObj.integrated, verbose = FALSE)
@@ -95,7 +89,6 @@ FeaturePlot(seuObj.integrated, features = c("S100a8"))
 FeaturePlot(seuObj.integrated, features = c("Mmp9"))
 FeaturePlot(seuObj.integrated, features = c("Il1r2"))
 
-
 # Generate cell type predictions from database
 ref.se <- ImmGenData()
 sce <- as.SingleCellExperiment(seuObj.integrated)
@@ -107,19 +100,10 @@ seuObj.integrated$pruned_labels = pred$pruned.labels
 DimPlot(seuObj.integrated, group.by = "pruned_labels", label = T, 
         label.size = 3) + NoLegend() 
 
-setwd("~/Desktop/GitHub/Neutrophils/Data")
-tiff("WangUMAP.tiff", units = "in", width = 6, height = 6, res = 300)
-DimPlot(seuObj.integrated, group.by = "pruned_labels", label = F) +
-  guides(color=guide_legend(ncol =1, override.aes = list(size=5))) +
-  ggtitle("Wang: Cell Type UMAP")+
-  theme(axis.text.x = element_text(size=20),
-        axis.text.y = element_text(size=20))
-dev.off()
-
 saveRDS(seuObj.integrated, file = "~/Desktop/Thesis/SingleCell/WangPaper/WangDat.rds")
 
 #Subset neutrophils
-Neutrophils_Wang <- subset(seuObj.integrated, pruned_labels == "Neutrophils")
+Neutrophils_Wang <- subset(seuObj_Wang, pruned_labels == "Neutrophils")
 
 #Neutrophils_Wang <- subset(Neutrophils_Wang, seurat_clusters %in% c(1,11,13,14,26,28,34))
 DefaultAssay(Neutrophils_Wang) <- "integrated"
@@ -134,14 +118,12 @@ DimPlot(Neutrophils_Wang, group.by = "time")+
   theme(axis.text.x = element_text(size=20),
         axis.text.y = element_text(size=20))
 
-set.seed(42)
 Neutrophils_Wang <- FindVariableFeatures(Neutrophils_Wang, selection.method = "vst", assay = "RNA")
 all.genes <- rownames(Neutrophils_Wang)
 Neutrophils_Wang <- ScaleData(Neutrophils_Wang, features = all.genes)
 Neutrophils_Wang <- RunPCA(Neutrophils_Wang, features = VariableFeatures(object = Neutrophils_Wang))
 
 ElbowPlot(Neutrophils_Wang)
-
 
 Neutrophils_Wang <- FindNeighbors(Neutrophils_Wang, dims = 1:20)
 Neutrophils_Wang <- FindClusters(Neutrophils_Wang)
@@ -152,6 +134,17 @@ DimPlot(Neutrophils_Wang, reduction = "umap")
 
 DimPlot(Neutrophils_Wang, group.by = "time") +
   ggtitle("Wang Neutrophils by Time")
+
+setwd("~/Desktop/GitHub/Neutrophils/Data")
+tiff("WangNeutrophils.tif", units = "in", width = 6, height = 6, res = 300)
+DimPlot(Neutrophils_Wang, group.by = "time", label = F, cols = c("red", "blue", "purple")) +
+  guides(color=guide_legend(ncol =1, override.aes = list(size=5))) +
+  ggtitle("Wang: Neutrophils UMAP")+
+  theme(axis.text.x = element_text(size=20),
+        axis.text.y = element_text(size=20))
+dev.off()
+
+saveRDS(Neutrophils_Wang, file = "~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Neutrophils_Wang.rds")
 
 FeaturePlot(Neutrophils_Wang, features = c("Ly6g"))
 FeaturePlot(Neutrophils_Wang, features = c("S100a9"))
@@ -166,8 +159,6 @@ Neu.Timemarkers <- FindAllMarkers(Neutrophils_Wang, only.pos = TRUE,
                                   min.pct = 0.25, logfc.threshold = 0.15)
 
 Neu.Timemarkers$pct.diff <- Neu.Timemarkers$pct.1 - Neu.Timemarkers$pct.2
-
-
 
 #### GO ANALYSIS ###
 Uninjured <- Neu.Timemarkers[Neu.Timemarkers$cluster == 0,]
