@@ -116,6 +116,9 @@ DimPlot(seuObj.integrated_B, group.by = "pruned_labels", label = F,
 
 dev.off()
 
+saveRDS(seuObj.integrated_B, file = "~/Desktop/Thesis/SingleCell/BrennanPaper/Bren_Dat.rds")
+
+#subset neutrophils
 Neutrophils_Bren <- subset(seuObj.integrated_B, pruned_labels == "Neutrophils" & seurat_clusters == 12)
 DefaultAssay(Neutrophils_Bren) <- "integrated"
 

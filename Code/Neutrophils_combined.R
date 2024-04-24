@@ -343,3 +343,13 @@ tiff("~/Desktop/GitHub/Neutrophils/Data/Correlation.tiff", units = "in", width =
 ggplot(cor.df, aes(x, reorder(y, x), fill = correlation)) +
   geom_tile()
 dev.off()
+
+
+#subset uninjured neutrophils from all neutrophil datasets
+Uninjured_Wang <- subset(Neutrophils_Wang, time == '0')
+Uninjured_Bren <- subset(Neutrophils_Bren, time =='0')
+Uninjured_Lee <- subset(Neutrophils_Lee, time == '0')
+
+saveRDS(Uninjured_Wang, file = "~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Uninjured_Wang.rds")
+saveRDS(Uninjured_Bren, file = "~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Uninjured_Bren.rds")
+saveRDS(Uninjured_Lee, file = "~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Uninjured_Lee.rds")
