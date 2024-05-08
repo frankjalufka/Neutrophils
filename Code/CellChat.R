@@ -6,6 +6,7 @@ library(readr)
 library(tidyr)
 library(RColorBrewer)
 library(dplyr)
+library(ggalluvial)
 
 #Read in Seurat objects
 wang <- readRDS("WangDat.rds")
@@ -82,7 +83,7 @@ cellchat <- aggregateNet(cellchat)
 
 saveRDS(cellchat, file = "D:/Frank/cellchat_combined.rds")
 
-cellchat <- readRDS("~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/cellchat_combined.rds")
+cellchat <- readRDS("~/Desktop/Thesis/scRNA_Chapter/NeutrophilFiles/Version_3.0/cellchat_combined.rds")
 
 groupSize <- as.numeric(table(cellchat@idents))
 
@@ -92,10 +93,64 @@ netVisual_circle(cellchat@net$count,
                  label.edge = F,
                  title.name = "Number of Interactions")
 
+tiff("~/Desktop/GitHub/Neutrophils/Data/Neu_Target_circle.tif", units = "in", width = 9, height = 9, res = 300)
+netVisual_circle(cellchat@net$count, 
+                 vertex.weight = groupSize,
+                 weight.scale = T,
+                 label.edge = F,
+                 targets.use = "Neutrophils",
+                 top = 0.5,
+                 margin = 0)
 
+dev.off()
 
+tiff("~/Desktop/GitHub/Neutrophils/Data/Neu_source_circle.tif", units = "in", width = 9, height = 9, res = 300)
+netVisual_circle(cellchat@net$count, 
+                 vertex.weight = groupSize,
+                 weight.scale = T,
+                 label.edge = F,
+                 sources.use = "Neutrophils",
+                 top = 0.5,
+                 margin = 0)
 
+dev.off()
 
+tiff("~/Desktop/GitHub/Neutrophils/Data/Neu_source_bubble.tif", units = "in", width = 8, height = 8, res = 300)
+netVisual_bubble(cellchat,
+                 sources.use = "Neutrophils",
+                 targets.use = c("Astrocyte", "B cells", "Dendridic", "Endothelial cells", "Ependymal", "Macrophages", "Microglia", "Neuron", "Neutrophils", "Oligodendrocyte", "Pericyte"),
+                 remove.isolate = TRUE)
+dev.off()
 
+tiff("~/Desktop/GitHub/Neutrophils/Data/Neu_target_bubble.tif", units = "in", width = 8, height = 8, res = 300)
+netVisual_bubble(cellchat,
+                 sources.use = c("Dendridic", "Endothelial cells", "Ependymal", "Microglia", "Neuron", "Neutrophils", "NK cells", "Oligodendrocyte", "Pericyte"),
+                 targets.use = "Neutrophils",
+                 remove.isolate = TRUE)
 
+dev.off()
 
+cellchat <- netAnalysis_computeCentrality(cellchat, slot.name = "netP")
+netAnalysis_signalingRole_network(cellchat, width = 8, height = 2.5, font.size = 10)
+
+gg1 <- netAnalysis_signalingRole_scatter(cellchat)
+
+pathways.show <- c("SELL")
+
+netVisual_heatmap(cellchat, signaling = pathways.show)
+
+dev.off()
+
+ht <- netAnalysis_signalingRole_heatmap(cellchat, signaling = c("TNF", "NOTCH"))
+selectK(cellchat, pattern = "outgoing")
+
+nPatterns = 3
+cellchat <- identifyCommunicationPatterns(cellchat, pattern = "outgoing", k = nPatterns)
+
+netAnalysis_river(cellchat, pattern = "outgoing")
+netAnalysis_dot(cellchat, pattern = "outgoing")
+
+cellchat <- computeNetSimilarity(cellchat, type = "functional")
+cellchat <- netEmbedding(cellchat, type = "functional")
+cellchat <- netClustering(cellchat, type = "functional")
+netVisual_embedding(cellchat, type = "functional", label.size = 3.5)

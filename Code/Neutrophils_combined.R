@@ -12,18 +12,20 @@ library(readr)
 setwd("~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/")
 
 #import datasets
-Neutrophils_Bren <- readRDS("~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Neutrophils_Bren.rds")
-Neutrophils_Wang <- readRDS("~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Neutrophils_Wang.rds")
-Neutrophils_Lee <- readRDS("~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Neutrophils_Lee.RDS")
+Neutrophils_Bren <- readRDS("~/Desktop/Thesis/scRNA_Chapter/NeutrophilFiles/Version_3.0/Neutrophils_Bren.rds")
+Neutrophils_Wang <- readRDS("~/Desktop/Thesis/scRNA_Chapter/NeutrophilFiles/Version_3.0/Neutrophils_Wang.rds")
+Neutrophils_Lee <- readRDS("~/Desktop/Thesis/scRNA_Chapter/NeutrophilFiles/Version_3.0/Neutrophils_Lee.RDS")
+Neutrophils_Neutrotime <- Neutrophils_Neu
 #label datasets by paper
 Neutrophils_Bren@meta.data$trial = "Brennan"
 Neutrophils_Lee@meta.data$trial = "Lee"
 Neutrophils_Wang@meta.data$trial = "Wang"
+Neutrophils_Neutrotime@meta.data$trial = "Neutrotime"
 
 Neu_Integrated <- readRDS("~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Neu_integrated.rds")
 
 #Combine datasets into list for integration
-Neu_Combined = list(c(Neutrophils_Bren,Neutrophils_Lee, Neutrophils_Wang ))[[1]]
+Neu_Combined = list(c(Neutrophils_Bren, Neutrophils_Lee, Neutrophils_Wang, Neutrophils_Neutrotime))[[1]]
 
 #Integrate data from list
 features <- SelectIntegrationFeatures(object.list = Neu_Combined)
@@ -44,24 +46,33 @@ Neu_Integrated <- FindClusters(Neu_Integrated)
 #Plot clusters of integrated data
 Idents(Neu_Integrated) <- 'seurat_clusters'
 Neu_Integrated <- RunUMAP(Neu_Integrated, dims = 1:30)
-DimPlot(Neu_Integrated, reduction = "umap", label = F, group.by = "seurat_clusters",
-        split.by = "time") + NoLegend()
+DimPlot(Neu_Integrated, reduction = "umap", label = F, group.by = "seurat_clusters") + NoLegend()
 
 #Make labels consistent, should do this earlier for consistency
 Neu_Integrated$time <- factor(Neu_Integrated$time, levels = c("0", "1", "3", "7", "14", "28"))
 
+saveRDS(Neu_Integrated, file = "~/Desktop/Thesis/scRNA_Chapter/NeutrophilFiles/Version_3.0/NeutrotimeCombined.rds")
+
+DimPlot(Neu_Integrated, reduction = "umap", label = F, group.by = "sample")
 
 #Custom colors for upcoming plots
 setwd("~/Desktop/GitHub/Neutrophils/Data")
-tiff("CombinedNeutrophils.tif", units = "in", width = 6, height = 6, res = 300)
-DimPlot(Neu_Integrated, group.by = "time", label = F, cols = c("red", "green", "blue", "gold", "purple", "aquamarine4")) +
+tiff("CombinedNeutrophilsBySample.tif", units = "in", width = 6, height = 6, res = 300)
+DimPlot(Neu_Integrated, group.by = "sample", label = F, cols = c("yellow", "firebrick1", "purple4")) +
   guides(color=guide_legend(ncol =1, override.aes = list(size=5))) +
   ggtitle("Combined Neutrophil UMAP")+
   theme(axis.text.x = element_text(size=20),
         axis.text.y = element_text(size=20))
 dev.off()
 
-saveRDS(Neu_Integrated, file = "~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Neu_integrated.rds")
+tiff("CombinedNeutrophilsByTime.tif", units = "in", width = 6, height = 6, res = 300)
+DimPlot(Neu_Integrated, group.by = "time", label = F, cols = c("red", "green", "blue", "gold", "purple", "aquamarine4")) +
+  guides(color=guide_legend(ncol =1, override.aes = list(size=5))) +
+  ggtitle("Combined Neutrophil UMAP by Time")+
+  theme(axis.text.x = element_text(size=20),
+        axis.text.y = element_text(size=20))
+dev.off()
+#saveRDS(Neu_Integrated, file = "~/Desktop/Thesis/SingleCell/NeutrophilFiles/Version_3.0/Neu_integrated.rds")
 
 DimPlot(Neu_Integrated, split.by = "time", group.by = "time")
 DimPlot(Neu_Integrated, split.by = "time", group.by = "trial")
